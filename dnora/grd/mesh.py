@@ -61,6 +61,27 @@ class Interpolate(Mesher):
     def __str__(self):
         return(f"Meshing using {self.method} interpolation.")
 
+class DaskInterpolate(Mesher):
+    """Interpolates data to grid. A wrapper for scipy.interpolate."""
+
+    def __init__(self, client) -> None:
+        super().__init__()
+        self.client = client
+
+        return
+
+    def __call__(self, da, lonQ, latQ):
+        from .dask_interpolate import parallel_interpolate
+        #lon0, lat0 = np.meshgrid(lon, lat)
+        da = da.where(~np.logical_not(da>0), 0.) # Keeping land points as nan lets the shoreline creep out
+        meshed_data = parallel_interpolate(self.client, da, lonQ, latQ)#, chunksize_x=700, chunksize_y=700)
+
+        return meshed_data
+
+
+    def __str__(self):
+        return(f"Meshing using dask and linear interpolation.")
+
 
 # class TrivialMesher(Mesher):
 #     """Passes along data.

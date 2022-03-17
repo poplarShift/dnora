@@ -37,28 +37,7 @@ class Grid:
 
         msg.header(topo_reader, "Importing topography...")
         print(topo_reader)
-        topo, lon, lat = topo_reader(min(self.lon()), max(self.lon()), min(self.lat()), max(self.lat()))
-
-        topo, lon, lat = force_to_xyz(topo, lon, lat)
-
-        # Depth is positive, so set everything that is not positive to nan
-        topo[topo<=0]=np.nan
-
-        # This was used for structured topography
-        #coords_dict = {'lon': lon, 'lat': lat}
-        #vars_dict = {'topo': (['lat', 'lon'], topo)}
-
-        points = [x for x in range(len(lon))]
-        coords_dict = {'points': points}
-        vars_dict = {'topo': (['points'], topo), 'lon': (['points'], lon), 'lat': (['points'], lat)}
-        self.rawdata = xr.Dataset(
-                    coords=(coords_dict
-                    ),
-                    data_vars=(vars_dict
-                    ),
-                    )
-
-
+        self.raw_topo_xarray = topo_reader(min(self.lon()), max(self.lon()), min(self.lat()), max(self.lat()))
         return
 
     def append_boundary(self, boundary_setter: BoundarySetter) -> None:
@@ -88,7 +67,8 @@ class Grid:
 
             msg.header(mesher, "Meshing grid bathymetry...")
             print(mesher)
-            topo = mesher(self.raw_topo(), self.raw_lon(), self.raw_lat(), self.lon(), self.lat())
+            topo = mesher(self.raw_topo_xarray, self.lon(), self.lat())
+            return topo
             topo[topo < 0] = 0
             self.data = topo
             coords_dict = {'nodes': self.nodes()}
