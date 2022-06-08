@@ -108,9 +108,10 @@ class NORA3(ForcingReader):
                                      '--process.rotateVector.direction=latlon',
                                      '--output.file='+nc_fimex]
                     call(fimex_command)
+                    msg.plain(f'Cached {url_or_cache} to {nc_fimex}')
                     wnd_list.append(xr.open_dataset(nc_fimex).squeeze())
                 except OSError:
-                    msg.plain(f'SKIPPING, file not found: {url}')
+                    msg.plain(f'SKIPPING, error while treating: {url}')
 
         wind_forcing = xr.concat(wnd_list, dim="time")
 
