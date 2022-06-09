@@ -79,7 +79,7 @@ class NORA3(ForcingReader):
         for n in range(len(file_times)):
 
             url = self.get_url(file_times[n], start_times[n], first_ind=self.lead_time)
-            url_or_cache, data_from_cache = self.get_filepath_if_cached(url)
+            url_or_cache, data_from_cache = self.get_filepath_if_cached(url, grid)
 
             msg.from_file(url_or_cache)
             msg.plain(f"Reading wind forcing data: {start_times[n]}-{end_times[n]}")
@@ -88,7 +88,7 @@ class NORA3(ForcingReader):
                 wnd_list.append(this_ds)
             else:
                 try:
-                    nc_fimex = self._url_to_filename(url_or_cache)
+                    nc_fimex = self._url_to_filename(url_or_cache, grid=grid)
                     fimex_command = ['fimex', '--input.file='+url_or_cache,
                                      '--interpolate.method=bilinear',
                                      '--interpolate.projString=+proj=latlong +ellps=sphere +a=6371000 +e=0',
@@ -140,21 +140,22 @@ class NORA3(ForcingReader):
         url = 'https://thredds.met.no/thredds/dodsC/nora3/'+folder + '/' + filename
         return url
 
-    def get_filepath_if_cached(self, url: str):
+    def get_filepath_if_cached(self, url: str, grid):
         """
         Returns the filepath if the file is cached locally, otherwise
         hands back the URL.
         """
-        maybe_cache = self._url_to_filename(url)
+        maybe_cache = self._url_to_filename(url, grid)
         if os.path.exists(maybe_cache):
             return maybe_cache, True
         else:
             return url, False
 
-    def _url_to_filename(self, url):
+    def _url_to_filename(self, url, grid):
         """
         Sanitizes a url to a valid file name.
         """
+        gridname = grid.name() + '_'
         fname = "".join(x for x in url if x.isalnum() or x == '.')
         return os.path.join(self.cache_folder, fname)
 
